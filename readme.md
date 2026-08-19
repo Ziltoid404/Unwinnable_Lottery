@@ -18,7 +18,7 @@ So this tool does precisely that. It guesses. Fast. In parallel. And it loses ev
 
 Even at 10 billion guesses per second on a GPU farm, your first expected hit against a generous estimate of 1 billion funded addresses would arrive roughly **3.36 x 10^11 times the current age of the universe** from now.
 
-That is not 300 billion years. It is more than 300 billion times the entire age of everything that has ever existed.
+It is more than 300 billion times the entire age of everything that has ever existed.
 
 ```
 Address space         : 2^160  = 1.46 x 10^48
@@ -28,9 +28,9 @@ Expected keys to win  : 1.46 x 10^39
 Wait at 10B keys/sec  : ~3.36 x 10^11 x age of the universe
 ```
 
-Speed is not the bottleneck. The address space is. You could make the code a million times faster and the conclusion would not move in any way a human could perceive.
+The address space is the bottleneck. You could make the code a million times faster and the conclusion would not move in any way a human could perceive.
 
-The exact thing that makes this lottery unwinnable is what makes cryptographic keys unbreakable. Your Bitcoin is not safe because someone is guarding it. It is safe because the math is this brutal.
+The exact thing that makes this lottery unwinnable is what makes cryptographic keys unbreakable. Your Bitcoin is safe because the math behind it is brutal.
 
 ## Read-only by design
 
