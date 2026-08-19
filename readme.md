@@ -52,16 +52,16 @@ pip install coincurve pycryptodome
 
 ```bash
 # Default run: Bitcoin only, all CPU cores, empty funded set (always misses)
-python3 unwinnable_lottery_fast.py
+python3 unwinnable_lottery.py
 
 # Check against a real funded-address file
-python3 unwinnable_lottery_fast.py --funded funded.txt
+python3 unwinnable_lottery.py --funded funded.txt
 
 # Limit workers and check both chains
-python3 unwinnable_lottery_fast.py --workers 8 --chains both --funded funded.txt
+python3 unwinnable_lottery.py --workers 8 --chains both --funded funded.txt
 
 # See the Golden Ticket feature without waiting for the heat death of the universe
-python3 unwinnable_lottery_fast.py --demo-ticket
+python3 unwinnable_lottery.py --demo-ticket
 ```
 
 While running, it prints a live readout:
