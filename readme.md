@@ -45,13 +45,13 @@ To be completely clear: using a found key to take funds you do not own would be 
 Requires Python 3.
 
 ```bash
-pip install coincurve pycryptodome
+pip install coincurve
 ```
 
 ## Usage
 
 ```bash
-# Default run: Bitcoin only, all CPU cores, empty funded set (always misses)
+# Default run: all CPU cores, empty funded set (always misses)
 python3 unwinnable_lottery.py
 
 # Check against a real funded-address file
@@ -67,8 +67,10 @@ python3 unwinnable_lottery.py --demo-ticket
 While running, it prints a live readout:
 
 ```
-checked   12,480,000 |   415,000 keys/s | P(any hit) 8.54e-33 | wait 3.36e11x age of universe | hits 0
+checked      420,000 |   415,000 keys/s | P(any hit) 2.87e-34 | wait 8.10e15x age of universe | hits 0
 ```
+
+The `wait` figure scales with your speed: at this CPU rate it is around 8 x 10^15 times the age of the universe, and at the 10-billion-keys/s GPU figure it drops to roughly 3.36 x 10^11. Either way, it never gets close to plausible.
 
 Press Ctrl+C to stop. It will report how much of the address space you explored, which will be a number indistinguishable from zero.
 
@@ -95,12 +97,14 @@ bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4 50000000
 
 Addresses are decoded to their raw 20-byte values so comparisons happen on bytes, not strings. P2WSH and Taproot (32-byte) programs are decoded and dropped, since they cannot match what the worker derives. If you omit the file, the funded set is empty and the tool is purely a benchmark of how futile the search is.
 
+You can download real Bitcoin address lists from addresses.loyce.club.
+
 ## How it works
 
-The "fast" in the filename refers to wringing the most futility-per-second out of your hardware. None of it changes the conclusion.
+Every optimization here is about wringing the most futility-per-second out of your hardware. None of it changes the conclusion.
 
-1. **One elliptic-curve multiply per key.** Both the Bitcoin HASH160 and the Ethereum address are derived from a single public key, since both chains share the secp256k1 curve. No heavyweight wallet objects are built.
-2. **Raw-byte comparison in the hot loop.** Base58, bech32, EIP-55, and hex encoding only ever run on a (statistically nonexistent) hit, not millions of times per second.
+1. **One elliptic-curve multiply per key.** The Bitcoin HASH160 is derived from a single secp256k1 public key: a compressed-pubkey serialize, then SHA-256, then RIPEMD-160. No heavyweight wallet objects are built.
+2. **Raw-byte comparison in the hot loop.** Base58 and bech32 decoding happen once, up front, when the funded set is loaded. In the hot loop the derived 20-byte hash is compared directly against that set, so no string encoding runs millions of times per second.
 3. **Multiprocessing.** The search is embarrassingly parallel, so throughput scales almost linearly with cores.
 
 ## Why this exists
