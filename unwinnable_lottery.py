@@ -3,7 +3,8 @@
 unwinnable_lottery.py
 ==========================
 At, say, 10 billion keys/s on a GPU farm you would still expect your first
-funded-address hit roughly 10^8 times the current age of the universe from now.
+funded-address hit roughly 3.36 x 10^11 times (over 300 billion times) the
+current age of the universe from now.
 
 This tool is READ-ONLY. It has no signing/spending/sweeping code and never will.
 
