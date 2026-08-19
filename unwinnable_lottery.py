@@ -2,13 +2,8 @@
 """
 unwinnable_lottery.py
 ==========================
-Optimized version of the educational "unwinnable free lottery" demo. Same purpose,
-same read-only / no-sweep guarantees.
-
-
-Even so: at, say, 10 billion keys/s on a GPU farm you would still expect your first
+At, say, 10 billion keys/s on a GPU farm you would still expect your first
 funded-address hit roughly 10^8 times the current age of the universe from now.
-Speed is not the bottleneck — the 2^160 address space is. That is the lesson.
 
 This tool is READ-ONLY. It has no signing/spending/sweeping code and never will.
 
