@@ -8,10 +8,10 @@ funded-address hit roughly 10^8 times the current age of the universe from now.
 This tool is READ-ONLY. It has no signing/spending/sweeping code and never will.
 
 Dependencies:
-    pip install coincurve pycryptodome
+    pip install coincurve
 
-Funded set format (optional): a text file with one hex-encoded 20-byte hash per
-line (Bitcoin HASH160 or Ethereum address bytes). Empty/omitted => always misses.
+Funded set format (optional): a Loyce.club-format address file (one Bitcoin
+address per line, with an optional balance column). Empty/omitted => always misses.
 
 There is one missing piece for this to "fully" work: a list of files with addresses.
 You can get those from addresses.loyce.club and you must use the --funded flag.
@@ -29,7 +29,6 @@ import secrets
 import time
 
 from coincurve import PublicKey
-from Crypto.Hash import keccak
 
 ADDRESS_SPACE = 2 ** 160
 FUNDED_ESTIMATE = 1_000_000_000
@@ -192,12 +191,11 @@ def load_funded(path, min_balance=0, assume_sorted_desc=True):
     return funded
 
 
-def worker(funded, result_q, stop, do_btc=True, do_eth=True):
-    """Generate random keys and check the requested chain(s) against the funded set.
+def worker(funded, result_q, stop):
+    """Generate random keys and check their Bitcoin address against the funded set.
 
-    Each chain derived adds work per key: BTC needs a compressed-pubkey serialize +
-    SHA-256 + RIPEMD-160; ETH needs an uncompressed-pubkey serialize + Keccak-256.
-    Deriving only the chain(s) you actually loaded addresses for avoids wasted work.
+    Each key needs a compressed-pubkey serialize + SHA-256 + RIPEMD-160 to derive
+    its HASH160, which is then compared (as raw bytes) against the funded set.
     """
     # Ignore Ctrl+C in workers: the main process catches it and signals us via `stop`.
     # Without this, Windows (spawn) delivers SIGINT to every process and each worker
@@ -212,17 +210,10 @@ def worker(funded, result_q, stop, do_btc=True, do_eth=True):
         while not stop.is_set():
             for _ in range(BATCH):
                 pk = secrets.token_bytes(32)
-                P = PublicKey.from_valid_secret(pk)        # the one shared EC multiply
-                if do_btc:
-                    btc_h160 = new_ripemd(sha256(P.format(True)).digest())
-                    if btc_h160 in funded:
-                        result_q.put(("hit", "BTC", pk.hex(), btc_h160.hex()))
-                if do_eth:
-                    k = keccak.new(digest_bits=256)
-                    k.update(P.format(False)[1:])          # uncompressed pubkey, drop 0x04
-                    eth_addr = k.digest()[-20:]
-                    if eth_addr in funded:
-                        result_q.put(("hit", "ETH", pk.hex(), eth_addr.hex()))
+                P = PublicKey.from_valid_secret(pk)        # the one EC multiply
+                btc_h160 = new_ripemd(sha256(P.format(True)).digest())
+                if btc_h160 in funded:
+                    result_q.put(("hit", "BTC", pk.hex(), btc_h160.hex()))
             count += BATCH
             result_q.put(("count", BATCH))
     except (KeyboardInterrupt, EOFError, BrokenPipeError):
@@ -234,9 +225,9 @@ def worker(funded, result_q, stop, do_btc=True, do_eth=True):
             pass
 
 
-def banner(workers, chains_desc):
+def banner(workers):
     print("=" * 74)
-    print("  THE UNWINNABLE FREE LOTTERY (optimized)  —  educational futility demo")
+    print("  THE UNWINNABLE FREE LOTTERY  —  educational futility demo")
     print("=" * 74)
     print(f"  Workers / CPU cores  : {workers}")
     print(f"  Address space        : 2^160 = {ADDRESS_SPACE:.3e}")
@@ -244,11 +235,11 @@ def banner(workers, chains_desc):
     print(f"  Win chance per key   : {P_PER_KEY:.3e}")
     print(f"  Expected keys to win : {EXPECTED_KEYS:.3e}")
     print("=" * 74)
-    print(f"  (each key is checked against: {chains_desc})\n")
+    print("  (each random key's Bitcoin address is checked against the funded set)\n")
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Optimized educational unwinnable-lottery scanner (read-only).")
+    ap = argparse.ArgumentParser(description="Educational unwinnable-lottery scanner (read-only, Bitcoin).")
     ap.add_argument("--workers", type=int, default=os.cpu_count(), help="parallel processes (default: all cores)")
     ap.add_argument("--funded", help="path to a Loyce.club-format funded-address file "
                                       "('address balance' per line; default: empty => always miss)")
@@ -258,11 +249,6 @@ def main():
     ap.add_argument("--no-sorted", action="store_true",
                     help="set if your funded file is NOT sorted by balance descending "
                          "(disables the early-stop optimization for --min-balance)")
-    ap.add_argument("--chains", choices=["btc", "eth", "both"], default="btc",
-                    help="which chain(s) to derive and check (default: btc). Use 'btc' when your "
-                         "funded file holds only Bitcoin addresses (a Loyce file) — checking ETH "
-                         "against it would just waste a keccak hash per key. NOTE: this scans for "
-                         "funded *accounts*; it is unrelated to mining (Ethereum is proof-of-stake).")
     ap.add_argument("--demo-ticket", action="store_true",
                     help="write one sample Golden Ticket (clearly-fake placeholder) so you can see the feature, then exit")
     args = ap.parse_args()
@@ -277,20 +263,15 @@ def main():
         print("In real use this file is never written, because the lottery is unwinnable.")
         return
 
-    do_btc = args.chains in ("btc", "both")
-    do_eth = args.chains in ("eth", "both")
-    chains_desc = {"btc": "Bitcoin only", "eth": "Ethereum only",
-                   "both": "BOTH Bitcoin and Ethereum"}[args.chains]
-
     funded = load_funded(args.funded, min_balance=args.min_balance,
                          assume_sorted_desc=not args.no_sorted)
-    banner(args.workers, chains_desc)
+    banner(args.workers)
     print(f"Checking against {len(funded):,} known-funded hashes "
           f"({'empty set => always misses, as expected' if not funded else 'loaded'}).\n")
 
     result_q = mp.Queue()
     stop = mp.Event()
-    procs = [mp.Process(target=worker, args=(funded, result_q, stop, do_btc, do_eth), daemon=True)
+    procs = [mp.Process(target=worker, args=(funded, result_q, stop), daemon=True)
              for _ in range(args.workers)]
     for p in procs:
         p.start()
@@ -317,7 +298,7 @@ def main():
                 last = now
                 elapsed = now - started
                 rate = checked / elapsed if elapsed else 0
-                cum_p = checked * (do_btc + do_eth) * P_PER_KEY  # one term per chain checked
+                cum_p = checked * P_PER_KEY
                 wait = (EXPECTED_KEYS / rate / AGE_OF_UNIVERSE_SECONDS) if rate else float("inf")
                 print(f"\rchecked {checked:>13,} | {rate:9.0f} keys/s | "
                       f"P(any hit) {cum_p:.2e} | wait {wait:.2e}x age of universe | hits {hits}",
