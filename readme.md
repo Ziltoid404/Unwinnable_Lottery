@@ -4,13 +4,13 @@
 
 This is an educational demonstration of one of the most counterintuitive truths in cryptography: you can run a perfectly valid attack, at enormous speed, on as many machines as you like, forever, and still have effectively zero chance of ever succeeding.
 
-The "lottery" generates random cryptocurrency private keys and checks whether any of them happen to unlock a real, funded Bitcoin or Ethereum wallet. There is no entry fee. There is no trick. The code genuinely does exactly what it says.
+The "lottery" generates random cryptocurrency private keys and checks whether any of them happen to unlock a real, funded Bitcoin wallet. There is no entry fee. There is no trick. The code genuinely does exactly what it says.
 
 It will also never, ever win. That is the entire point.
 
 ## The premise
 
-Every Bitcoin or Ethereum wallet is protected by a private key drawn from an address space of 2^160 possible values. "Brute forcing" a wallet means guessing random keys and hoping one lands on an address that already holds funds.
+Every Bitcoin wallet is protected by a private key drawn from an address space of 2^160 possible values. "Brute forcing" a wallet means guessing random keys and hoping one lands on an address that already holds funds.
 
 So this tool does precisely that. It guesses. Fast. In parallel. And it loses every single time.
 
@@ -57,8 +57,8 @@ python3 unwinnable_lottery.py
 # Check against a real funded-address file
 python3 unwinnable_lottery.py --funded funded.txt
 
-# Limit workers and check both chains
-python3 unwinnable_lottery.py --workers 8 --chains both --funded funded.txt
+# Limit workers
+python3 unwinnable_lottery.py --workers 8 --funded funded.txt
 
 # See the Golden Ticket feature without waiting for the heat death of the universe
 python3 unwinnable_lottery.py --demo-ticket
