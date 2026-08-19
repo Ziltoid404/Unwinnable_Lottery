@@ -80,7 +80,6 @@ Press Ctrl+C to stop. It will report how much of the address space you explored,
 | `--funded PATH` | Path to a funded-address file. Omit it and every check is a guaranteed miss. |
 | `--min-balance N` | Only load addresses holding at least N satoshis. Trims memory, and stops reading early on a balance-sorted file. |
 | `--no-sorted` | Set this if your funded file is not sorted by balance descending. |
-| `--chains btc\|eth\|both` | Which chain(s) to derive and check. Default: `btc`. |
 | `--demo-ticket` | Write one clearly-fake sample Golden Ticket so you can see the output format, then exit. |
 
 ## The funded-address file
